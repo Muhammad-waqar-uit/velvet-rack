@@ -1,0 +1,391 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Velvet Rack</title>
+<style>
+:root{color-scheme:light}
+html,body{min-height:100%}
+:root {
+  --bg: #f6f6f5;
+  --ink: #1a1a1a;
+  --muted: #8a8a8a;
+  --blue: #2f6bff;
+  --line: #d9d9d6;
+  --bar: #bdbdba;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.shell { min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+/* top chrome */
+.chrome { display: flex; justify-content: center; align-items: center; padding: 28px 24px 0; position: relative; }
+.nav { display: flex; gap: 28px; font-size: 13px; font-weight: 500; }
+.nav a { cursor: pointer; }
+.nav a:hover { opacity: .6; }
+.search { position: absolute; right: 24px; top: 20px; padding: 8px 18px; border-radius: 999px; background: #ececea; font-size: 12px; color: var(--muted); }
+
+/* collection */
+.collection { flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 56px; }
+.eyebrow { font-size: 11px; letter-spacing: .22em; font-weight: 600; }
+.eyebrow span { color: var(--blue); margin: 0 10px; font-weight: 300; }
+
+.rail-wrap { position: relative; width: 100%; margin-top: 40px; }
+.bar { position: absolute; left: 0; right: 0; top: 14px; height: 4px; background: linear-gradient(#cfcfcc, var(--bar)); border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,.12); z-index: 1; }
+.rail {
+  display: flex; gap: var(--rail-gap, 34px); padding: 0 calc(50vw - 100px) 70px; overflow-x: auto; scrollbar-width: none;
+  cursor: grab; user-select: none; scroll-snap-type: x proximity;
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail:active { cursor: grabbing; }
+
+.slot { position: relative; flex: 0 0 var(--slot-w, 104px); padding-top: 18px; scroll-snap-align: center; transition: flex-basis .6s cubic-bezier(.2,.8,.2,1), opacity .3s, filter .3s; }
+.slot.hot { flex-basis: var(--slot-w-hot, 224px); }
+.slot.dim { opacity: .55; filter: saturate(.7); }
+.peg { position: absolute; left: 50%; top: 0; width: 2px; height: 26px; background: #6a6a68; transform: translateX(-50%); z-index: 2; }
+.hang { position: relative; width: var(--slot-w-hot, 224px); left: 50%; translate: -50% 0; transform-origin: 50% 0; transform: perspective(900px) rotateY(var(--edge-angle, -80deg)); transition: transform .65s cubic-bezier(.2,.8,.2,1); }
+.slot.hot .hang { transform: perspective(900px) rotateY(0deg); }
+.garment { width: 100%; height: auto; display: block; filter: drop-shadow(0 14px 12px rgba(0,0,0,.18)); }
+
+.tagbadge { position: absolute; z-index: 3; left: 58px; top: 6px; background: #111; color: #fff; font-size: 8px; font-weight: 700; letter-spacing: .08em; padding: 3px 7px; border-radius: 3px; transform: rotate(-4deg); white-space: nowrap; }
+.tagbadge.new { left: auto; right: 24px; background: #fff; color: #111; border: 1px solid var(--line); }
+
+/* editor-style selection box */
+.sel { position: absolute; inset: 22px -6px 6px; border: 1.5px solid var(--blue); opacity: 0; transform: scale(.97); transition: opacity .18s, transform .18s; pointer-events: none; z-index: 4; }
+.slot.hot .sel { opacity: 1; transform: scale(1); transition-delay: .25s; }
+.sel-label { position: absolute; left: -1.5px; top: -22px; display: flex; align-items: center; gap: 6px; background: var(--blue); color: #fff; font-size: 10px; font-weight: 600; padding: 4px 9px; border-radius: 4px 4px 0 0; }
+.sel-label b { width: 8px; height: 8px; border: 1.5px solid #fff; border-radius: 2px; display: block; }
+.handle { position: absolute; width: 7px; height: 7px; background: #fff; border: 1.5px solid var(--blue); border-radius: 50%; }
+.tl { left: -4px; top: -4px; } .tr { right: -4px; top: -4px; } .bl { left: -4px; bottom: -4px; } .br { right: -4px; bottom: -4px; }
+
+/* floating toolbar */
+.toolbar { display: flex; align-items: center; gap: 4px; background: #fff; border-radius: 10px; padding: 6px 8px; box-shadow: 0 6px 18px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.05); font-size: 11px; white-space: nowrap; }
+.slot .toolbar { position: absolute; left: 50%; bottom: 4px; transform: translate(-50%, 8px); opacity: 0; transition: opacity .2s .05s, transform .2s .05s; pointer-events: none; z-index: 5; }
+.slot.hot .toolbar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toolbar-ask { display: flex; align-items: center; gap: 7px; padding: 0 6px; color: #444; }
+.dot { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #3b4bd6, #7b5cff); display: inline-block; }
+.toolbar-sep { width: 1px; height: 16px; background: var(--line); margin: 0 2px; }
+.toolbar button { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; }
+.toolbar button:hover { background: #f0f0ee; }
+.toolbar svg { width: 14px; height: 14px; fill: none; stroke: #555; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.toolbar .danger svg { stroke: #d33; }
+
+.rail-btn { position: absolute; top: 40%; width: 38px; height: 38px; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.12); font-size: 20px; z-index: 6; }
+.rail-btn.l { left: 18px; } .rail-btn.r { right: 18px; }
+.rail-btn:hover { background: #f2f2f0; }
+
+.caption { margin-top: 4px; font-size: 13px; font-weight: 500; min-height: 20px; animation: fade .3s ease; text-align: center; padding: 0 20px; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.cta { margin-top: 24px; padding: 11px 26px; border: 1px solid #aaa; border-radius: 999px; font-size: 12px; background: transparent; transition: background .2s, color .2s; }
+.cta:hover { background: #111; color: #fff; border-color: #111; }
+
+/* detail */
+.detail { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 20px 60px; animation: fade .4s ease; }
+.back { align-self: flex-start; font-size: 12px; color: var(--muted); padding: 8px 12px; }
+.back:hover { color: var(--ink); }
+.stage { position: relative; width: 100%; max-width: 640px; display: flex; justify-content: center; padding-top: 8px; }
+.hanger-line { position: absolute; top: 0; left: 50%; width: 1.5px; height: 70px; background: #555; }
+.detail-garment { position: relative; width: min(380px, 70vw); margin-top: 62px; }
+.flip { animation: flip .5s cubic-bezier(.3,.7,.3,1); }
+@keyframes flip { 0% { transform: rotateY(90deg) scale(.95); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.detail-garment .garment { filter: drop-shadow(0 24px 22px rgba(0,0,0,.22)); }
+.selected-box { position: absolute; inset: 0; pointer-events: none; }
+.selected-box .toolbar { position: absolute; left: 50%; top: 66%; transform: translateX(-50%); pointer-events: auto; animation: fade .5s .3s both; }
+.arrow { position: absolute; top: 45%; width: 42px; height: 42px; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.12); font-size: 22px; z-index: 3; }
+.arrow.left { left: 0; } .arrow.right { right: 0; }
+.arrow:hover { background: #f2f2f0; }
+
+.meta { text-align: center; margin-top: 28px; width: 100%; max-width: 420px; }
+.counter { font-size: 10px; letter-spacing: .2em; color: var(--muted); }
+.meta h2 { font-size: 22px; font-weight: 600; margin-top: 12px; letter-spacing: -.01em; }
+.sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.tabs { display: flex; justify-content: center; gap: 22px; margin-top: 18px; }
+.tabs button { font-size: 11px; color: var(--muted); padding-bottom: 4px; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; }
+.tabs button.on { color: var(--ink); border-color: var(--ink); }
+.meta hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.desc { font-size: 12px; color: #444; }
+
+@media (max-width: 600px) {
+  .nav { gap: 18px; }
+  .search { display: none; }
+  .rail { gap: 30px; }
+  .arrow.left { left: -8px; } .arrow.right { right: -8px; }
+}
+
+/* photo mode: crossfade side -> front, no 3D turn needed when a side photo exists */
+.hang:has(.photo) { width: 100%; left: 0; translate: none; transform: none; }
+.hang:has(.photo .side) { transform: none; }
+.hang:has(.photo):not(:has(.side)) { width: var(--slot-w-hot, 224px); left: 50%; translate: -50% 0; transform: perspective(900px) rotateY(var(--edge-angle, -80deg)); }
+.slot.hot .hang:has(.photo):not(:has(.side)) { transform: perspective(900px) rotateY(0deg); }
+.photo { position: relative; aspect-ratio: 200 / 240; }
+.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 14px 12px rgba(0,0,0,.18)); transition: opacity .45s ease; pointer-events: none; }
+.photo .side { opacity: 1; }
+.photo .front { opacity: 1; }
+.photo:has(.side) .front { opacity: 0; }
+.slot.hot .photo:has(.side) .front { opacity: 1; }
+.slot.hot .photo .side { opacity: 0; }
+.photo-full { width: 100%; height: auto; display: block; filter: drop-shadow(0 24px 22px rgba(0,0,0,.22)); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<div id="root"></div>
+<script type="text/babel">
+const {useRef,useState}=React;
+// Layout settings for the rack. Change these numbers to restyle it.
+const config = {
+  gap: 34,            // px between garments on the rail
+  slotWidth: 104,     // px width of a resting (edge-on) garment
+  slotWidthHover: 224,// px width of the hovered (front-facing) garment
+  edgeAngle: -80      // deg the SVG garments are turned when resting (only used when no side photo)
+};
+
+// Each product is drawn as SVG by <Garment />. `kind` picks the silhouette.
+const products = [
+  { id: "navy-blazer", name: "Midnight Blazer", kind: "blazer", color: "#1f2a44", sub: "Tailored fit · Midnight navy", desc: "Soft-structured wool blend. Sharp lines, easy wear.", front: "", back: "" },
+  { id: "grey-hoodie", name: "Ash Grey Hoodie", kind: "hoodie", color: "#a9abae", sub: "Relaxed fit · Ash grey", desc: "Brushed fleece with a roomy hood. Everyday staple.", badge: "-20%", front: "ATLAS", back: "NO. 07" },
+  { id: "black-tee", name: "Jet Black Tee", kind: "tee", color: "#17181b", sub: "Boxy fit · Jet black", desc: "Heavy cotton jersey with a clean rib collar.", front: "Reign", back: "EST. 2024", trim: "#d9a7a7" },
+  { id: "green-hoodie", name: "Forest Green Hoodie", kind: "hoodie", color: "#1f5a3c", sub: "Oversized fit · Bottle green", desc: "Crafted in heavyweight fleece. Cut oversized. Made to last.", badge: "ONLY 3 LEFT", front: "VELRDO", back: "ORIGINAL", tag: "ORIGINAL" },
+  { id: "sand-crew", name: "Dune Sweatshirt", kind: "crew", color: "#d8c7a3", sub: "Classic fit · Dune sand", desc: "Garment-washed loopback cotton with a soft hand-feel.", front: "", back: "" },
+  { id: "rose-crew", name: "Dusty Rose Sweat", kind: "crew", color: "#b98aa0", sub: "Classic fit · Dusty rose", desc: "Lightweight terry in a muted seasonal shade.", badge: "NEW", front: "", back: "" },
+  { id: "cream-crew", name: "Oat Pullover", kind: "crew", color: "#ece3cf", sub: "Relaxed fit · Oat cream", desc: "Light, breathable and easy to layer.", front: "", back: "" }
+];
+
+// Hand-drawn SVG garments. All colour comes from the `color` prop.
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (v) => Math.max(0, Math.min(255, v + amt));
+  const r = c(n >> 16), g = c((n >> 8) & 255), b = c(n & 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+function Text({ txt, sub, light }) {
+  if (!txt) return null;
+  const fill = light ? "#1b1b1b" : "#efe6d0";
+  return (
+    <g fill={fill} textAnchor="middle">
+      <text x="100" y="118" fontFamily="'Playfair Display', Georgia, serif" fontWeight="800" fontSize={txt.length > 5 ? 26 : 30} letterSpacing="1">{txt}</text>
+      {sub && <text x="100" y="136" fontFamily="Georgia, serif" fontSize="9" letterSpacing="2">{sub}</text>}
+    </g>
+  );
+}
+
+function Garment({ product, side = "front" }) {
+  const { kind, color, front, back, tag, trim } = product;
+  const dark = shade(color, -28);
+  const light = shade(color, 22);
+  const isLight = parseInt(color.slice(1), 16) > 0xb0b0b0;
+  const label = side === "front" ? front : back;
+  const sub = side === "front" ? tag : null;
+  const id = `g-${product.id}-${side}`;
+
+  const defs = (
+    <defs>
+      <linearGradient id={id} x1="0" x2="1">
+        <stop offset="0" stopColor={dark} />
+        <stop offset=".35" stopColor={light} />
+        <stop offset=".7" stopColor={color} />
+        <stop offset="1" stopColor={dark} />
+      </linearGradient>
+    </defs>
+  );
+
+  if (kind === "tee") {
+    return (
+      <svg viewBox="0 0 200 240" className="garment" aria-label={product.name}>
+        {defs}
+        <path d="M70 18 L30 38 L6 84 L36 98 L50 76 L50 212 Q100 224 150 212 L150 76 L164 98 L194 84 L170 38 L130 18 Q100 40 70 18Z" fill={`url(#${id})`} />
+        <path d="M70 18 Q100 40 130 18 Q100 56 70 18Z" fill={trim || dark} />
+        <Text txt={label} sub={side === "front" ? "EST. 2024" : null} light={isLight} />
+      </svg>
+    );
+  }
+
+  if (kind === "blazer") {
+    return (
+      <svg viewBox="0 0 200 240" className="garment" aria-label={product.name}>
+        {defs}
+        <path d="M72 16 L28 36 L12 190 L44 196 L52 90 L52 214 L148 214 L148 90 L156 196 L188 190 L172 36 L128 16 L100 60Z" fill={`url(#${id})`} />
+        <path d="M72 16 L100 130 L128 16 L100 60Z" fill={dark} />
+        <path d="M100 130 L100 214" stroke={dark} strokeWidth="2" />
+        <circle cx="96" cy="160" r="2.5" fill={light} /><circle cx="96" cy="184" r="2.5" fill={light} />
+      </svg>
+    );
+  }
+
+  if (kind === "crew") {
+    return (
+      <svg viewBox="0 0 200 240" className="garment" aria-label={product.name}>
+        {defs}
+        <path d="M72 18 L30 36 L14 196 L44 200 L50 84 L50 214 Q100 226 150 214 L150 84 L156 200 L186 196 L170 36 L128 18 Q100 44 72 18Z" fill={`url(#${id})`} />
+        <path d="M72 18 Q100 48 128 18 Q100 62 72 18Z" fill={dark} />
+        <rect x="50" y="204" width="100" height="12" rx="4" fill={dark} opacity=".5" />
+        <Text txt={label} light={isLight} />
+      </svg>
+    );
+  }
+
+  // hoodie
+  return (
+    <svg viewBox="0 0 200 260" className="garment" aria-label={product.name}>
+      {defs}
+      <path d="M60 30 Q100 -2 140 30 L172 46 L190 206 L158 210 L152 98 L152 232 Q100 244 48 232 L48 98 L42 210 L10 206 L28 46Z" fill={`url(#${id})`} />
+      <path d="M62 30 Q100 -6 138 30 Q132 70 100 78 Q68 70 62 30Z" fill={dark} />
+      <path d="M78 36 Q100 14 122 36 Q116 62 100 66 Q84 62 78 36Z" fill={shade(color, -50)} />
+      <path d="M92 70 L90 108 M108 70 L110 108" stroke={light} strokeWidth="2.5" strokeLinecap="round" />
+      {side === "front" && <path d="M62 170 L72 150 H128 L138 170 V200 H62Z" fill={dark} opacity=".55" />}
+      <Text txt={label} sub={sub} light={isLight} />
+      <rect x="48" y="222" width="104" height="12" rx="4" fill={dark} opacity=".5" />
+    </svg>
+  );
+}
+
+
+
+const DEFAULT_CAPTION = "Crafted in heavyweight fleece. Cut oversized. Made to last.";
+
+
+// Shows a product photo when one is configured, otherwise the SVG garment.
+function GarmentView({ product, side }) {
+  const [bad, setBad] = useState(false);
+  const src = product.images && product.images[side];
+  if (src && !bad) return <img className="photo-full" src={src} alt={product.name} onError={() => setBad(true)} />;
+  return <Garment product={product} side={side} />;
+}
+
+function RackItem({ p }) {
+  const [bad, setBad] = useState(false);
+  const im = p.images || {};
+  if (im.front && !bad) {
+    return (
+      <div className="photo">
+        {im.side && <img className="ph side" src={im.side} alt="" onError={() => setBad(true)} />}
+        <img className="ph front" src={im.front} alt={p.name} onError={() => setBad(true)} />
+      </div>
+    );
+  }
+  return <Garment product={p} />;
+}
+
+function Toolbar() {
+  return (
+    <div className="toolbar" onClick={(e) => e.stopPropagation()}>
+      <span className="toolbar-ask"><i className="dot" />Ask for changes</span>
+      <span className="toolbar-sep" />
+      <button aria-label="Duplicate"><svg viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8" rx="1.5" /><path d="M3 10V4a1 1 0 011-1h6" /></svg></button>
+      <button aria-label="Hide"><svg viewBox="0 0 16 16"><path d="M2 8s2.3-4 6-4 6 4 6 4-2.3 4-6 4-6-4-6-4zM3 13L13 3" /></svg></button>
+      <button aria-label="Delete" className="danger"><svg viewBox="0 0 16 16"><path d="M3 4.5h10M6 4.5V3h4v1.5M5 4.5l.5 8h5l.5-8" /></svg></button>
+    </div>
+  );
+}
+
+function Detail({ index, onBack, onNav }) {
+  const p = products[index];
+  const [side, setSide] = useState("front");
+  return (
+    <section className="detail" key={p.id}>
+      <button className="back" onClick={onBack}>← Collection</button>
+      <div className="stage">
+        <button className="arrow left" onClick={() => onNav(-1)} aria-label="Previous">‹</button>
+        <div className="hanger-line" />
+        <div className="detail-garment">
+          <div key={side} className="flip"><GarmentView product={p} side={side} /></div>
+          <div className="selected-box"><Toolbar /></div>
+        </div>
+        <button className="arrow right" onClick={() => onNav(1)} aria-label="Next">›</button>
+      </div>
+      <div className="meta">
+        <div className="counter">{String(index + 1).padStart(2, "0")} / {String(products.length).padStart(2, "0")}</div>
+        <h2>{p.name}</h2>
+        <p className="sub">{p.sub}</p>
+        <div className="tabs">
+          {["front", "back"].map((s) => (
+            <button key={s} className={side === s ? "on" : ""} onClick={() => setSide(s)}>{s[0].toUpperCase() + s.slice(1)}</button>
+          ))}
+        </div>
+        <hr />
+        <p className="desc">{p.desc}</p>
+      </div>
+    </section>
+  );
+}
+
+function Store() {
+  const [hover, setHover] = useState(null);
+  const [open, setOpen] = useState(null);
+  const rail = useRef(null);
+  const drag = useRef({ down: false, x: 0, left: 0, moved: false });
+
+  const onDown = (e) => { drag.current = { down: true, x: e.pageX, left: rail.current.scrollLeft, moved: false }; };
+  const onMove = (e) => {
+    const d = drag.current;
+    if (!d.down) return;
+    const dx = e.pageX - d.x;
+    if (Math.abs(dx) > 4) d.moved = true;
+    rail.current.scrollLeft = d.left - dx;
+  };
+  const onUp = () => { drag.current.down = false; };
+  const nudge = (dir) => rail.current.scrollBy({ left: dir * 260, behavior: "smooth" });
+
+  const hovered = hover !== null ? products[hover] : null;
+
+  return (
+    <div className="shell">
+      <header className="chrome">
+        <nav className="nav">
+          <a onClick={() => setOpen(null)}>Home</a><a>Catalog</a><a>Contact</a>
+        </nav>
+        <div className="search">Find a product</div>
+      </header>
+
+      {open === null ? (
+        <main className="collection">
+          <p className="eyebrow">NEW COLLECTION <span>|</span> PREMIUM STREETWEAR</p>
+          <div className="rail-wrap" style={{ "--rail-gap": config.gap + "px", "--slot-w": config.slotWidth + "px", "--slot-w-hot": config.slotWidthHover + "px", "--edge-angle": config.edgeAngle + "deg" }}>
+            <div className="bar" />
+            <div
+              ref={rail}
+              className="rail"
+              onMouseDown={onDown}
+              onMouseMove={onMove}
+              onMouseUp={onUp}
+              onMouseLeave={() => { onUp(); setHover(null); }}
+            >
+              {products.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={"slot" + (hover === i ? " hot" : "") + (hover !== null && hover !== i ? " dim" : "")}
+                  onMouseEnter={() => setHover(i)}
+                  onClick={() => !drag.current.moved && setOpen(i)}
+                >
+                  <span className="peg" />
+                  <div className="hang">
+                    {p.badge && <span className={"tagbadge" + (p.badge === "NEW" ? " new" : "")}>{p.badge}</span>}
+                    <RackItem p={p} />
+                  </div>
+                  <div className="sel">
+                    <span className="sel-label"><b />Product</span>
+                    <span className="handle tl" /><span className="handle tr" /><span className="handle bl" /><span className="handle br" />
+                  </div>
+                  <Toolbar />
+                </div>
+              ))}
+            </div>
+            <button className="rail-btn l" onClick={() => nudge(-1)} aria-label="Scroll left">‹</button>
+            <button className="rail-btn r" onClick={() => nudge(1)} aria-label="Scroll right">›</button>
+          </div>
+          <p className="caption" key={hovered ? hovered.id : "default"}>{hovered ? hovered.name : DEFAULT_CAPTION}</p>
+          <button className="cta">Shop the Collection</button>
+        </main>
+      ) : (
+        <Detail
+          index={open}
+          onBack={() => setOpen(null)}
+          onNav={(d) => setOpen((open + d + products.length) % products.length)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Store/>);
+</script>
+</body></html>
